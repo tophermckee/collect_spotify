@@ -1,0 +1,28 @@
+{
+    "client_id": "xxxxxx",
+    "client_secret": "xxxxxx",
+    "redirect_uri": "xxxxxx",
+    "auth_token": "xxxxxx",
+    "access_token": [
+        "xxxxxx"
+    ],
+    "refresh_token": [
+        "xxxxxx"
+    ],
+    "expires_readable": [
+        "xxxxxx"
+    ],
+    "expires_integer": xxxxxx,
+    "playlist_ids": [
+        "xxxxxx",
+        "xxxxxx",
+        "xxxxxx",
+        "xxxxxx",
+        "xxxxxx",
+        "xxxxxx",
+        "xxxxxx",
+        "xxxxxx",
+        "xxxxxx"
+    ],
+    "destination_id": "xxxxxx"
+}
