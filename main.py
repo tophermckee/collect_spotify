@@ -1,4 +1,6 @@
-import requests, json, time, datetime
+import requests, json, time, datetime, pprint
+
+pp = pprint.PrettyPrinter(indent=2)
 
 def get_auth_token():
     with open('creds.json') as file:
@@ -71,7 +73,7 @@ def refresh_token():
         "client_id": credentials['client_id'],
         "client_secret": credentials['client_secret'],
         'grant_type': 'refresh_token',
-        'refresh_token': credentials['refresh_token'],
+        'refresh_token': credentials['refresh_token'][0],
         'redirect_uri': credentials['redirect_uri']
     }
 
@@ -81,11 +83,14 @@ def refresh_token():
     ).json()
 
     print(f'\n{access_response}\n')
-
-    credentials['access_token'] = credentials['access_token'],
-    credentials['refresh_token'] = credentials['refresh_token'],
+    
+    print(f"type of access_token -- {type(access_response['access_token'])}")
+    
+    credentials['access_token'] = access_response['access_token'],
     credentials['expires_readable'] = datetime.datetime.fromtimestamp(time.time() + int(access_response['expires_in'])).strftime('%Y-%m-%d %H:%M:%S'),
     credentials['expires_integer'] = time.time() + int(access_response['expires_in'])
+
+    pp.pprint(credentials)
 
     with open('creds.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
@@ -96,7 +101,7 @@ def add_song(uri):
         credentials = json.load(file)
 
     auth_token = credentials['auth_token']
-    access_token = credentials['access_token']
+    access_token = credentials['access_token'][0]
 
     print(f'Attempting to add current song with uri {uri}')
     headers = {
@@ -121,7 +126,7 @@ def compare_playlists():
         credentials = json.load(file)
 
     auth_token = credentials['auth_token']
-    access_token = credentials['access_token']
+    access_token = credentials['access_token'][0]
 
     if credentials['expires_integer'] < time.time():
         print(f"token expired -- {credentials['expires_readable']}")
@@ -183,4 +188,5 @@ def compare_playlists():
         print(f'added {added_songs} songs from {playlist_name} songs to Collected Music\n')
 
 if __name__ == "__main__":
+    refresh_token()
     compare_playlists()
