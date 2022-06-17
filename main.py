@@ -106,7 +106,7 @@ def refresh_token():
         json.dump(credentials, f, ensure_ascii=False, indent=4)
         f.close()
 
-def add_song(uri):
+def add_song(uri, playlist_id):
     with open('creds.json') as file:
         credentials = json.load(file)
 
@@ -124,7 +124,7 @@ def add_song(uri):
     })
 
     post_attempt = requests.post(  
-        'https://api.spotify.com/v1/playlists/0vgMGc8YNo1mx3FoWWWjzu/tracks',
+        f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks',
         headers=headers,
         data=payload
     ).json()
@@ -192,10 +192,10 @@ def compare_playlists():
                 if song["track"]["id"] in destination_ids:
                     continue
                 else:
-                    add_song(song["track"]["uri"])
-                    added_songs += 1
-            offset += 100
-        logging.info(f'added {added_songs} songs from {playlist_name} songs to Collected Music\n')
+                        add_song(song["track"]["uri"], credentials['collections'][collection]['destination_id'])
+                        added_songs += 1
+                offset += 100
+            logging.info(f'added {added_songs} songs from {playlist_name} songs to Collected Music\n')
 
 if __name__ == "__main__":
     refresh_token()
