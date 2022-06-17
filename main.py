@@ -111,7 +111,7 @@ def refresh_token():
         f.close()
 
 
-def add_song(uri, playlist_id, title, artist):
+def add_song_to_spotify(uri, playlist_id, title, artist):
     with open('creds.json') as file:
         credentials = json.load(file)
 
@@ -203,7 +203,7 @@ def compare_playlists():
                     if song["track"]["id"] in destination_song_ids:
                         continue
                     else:
-                        add_song(song["track"]["uri"], credentials['collections'][collection]['destination_id'], song["track"]["name"], song["track"]["artists"][0]["name"])
+                        add_song_to_spotify(song["track"]["uri"], credentials['collections'][collection]['destination_id'], song["track"]["name"], song["track"]["artists"][0]["name"])
                         added_songs += 1
                 
                 offset += 100
