@@ -1,4 +1,4 @@
-import requests, json, time, datetime, pprint, logging
+import requests, json, time, datetime, pprint, logging, string
 from pprint import pformat
 from pathlib import Path
 
@@ -116,7 +116,7 @@ def add_song(uri, playlist_id, title, artist):
     auth_token = credentials['auth_token']
     access_token = credentials['access_token'][0]
 
-    logging.info(f'Attempting to add \'{title}\' by {artist} with uri {uri}')
+    logging.info(f"Attempting to add \'{title.translate(str.maketrans('', '', string.punctuation))}\' by {artist} with uri {uri}")
     
     headers = {'Authorization': f'Bearer {credentials["access_token"][0]}', 'Content-Type': 'application/json'}
 
