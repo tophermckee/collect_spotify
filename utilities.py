@@ -5,7 +5,7 @@ from firebase_admin import firestore
 from pprint import pformat
 from pathlib import Path
 
-cred = credentials.Certificate('spotify-collection-93bd97a82285.json')
+cred = credentials.Certificate('collect-spotify-firebase.json')
 firebase_admin.initialize_app(cred)
 db = firestore.client()
 
