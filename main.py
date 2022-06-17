@@ -94,21 +94,22 @@ def refresh_token():
         data=access_params
     ).json()
 
-    logging.info(f'\n{access_response}\n')
+    # logging.info(f'\n{access_response}\n')
     
-    logging.info(f"type of access_token -- {type(access_response['access_token'])}")
+    # logging.info(f"type of access_token -- {type(access_response['access_token'])}")
     
     credentials['access_token'] = access_response['access_token'],
     credentials['expires_readable'] = datetime.datetime.fromtimestamp(time.time() + int(access_response['expires_in'])).strftime('%Y-%m-%d %H:%M:%S'),
     credentials['expires_integer'] = time.time() + int(access_response['expires_in'])
 
-    logging.info(pformat(credentials))
+    # logging.info(pformat(credentials))
 
     with open('creds.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
         f.close()
 
-def add_song(uri, playlist_id):
+
+def add_song(uri, playlist_id, title, artist):
     with open('creds.json') as file:
         credentials = json.load(file)
 
