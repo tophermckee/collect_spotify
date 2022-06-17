@@ -128,13 +128,10 @@ def add_song(uri, playlist_id, title, artist):
     
     logging.info(f'\n{post_attempt}\n')
 
-def compare_playlists():
-        
+
+def check_token():
     with open('creds.json') as file:
         credentials = json.load(file)
-
-    auth_token = credentials['auth_token']
-    access_token = credentials['access_token'][0]
 
     if credentials['expires_integer'] < time.time():
         logging.info(f"token expired -- {credentials['expires_readable']}")
