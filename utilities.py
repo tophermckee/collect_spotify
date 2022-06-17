@@ -34,7 +34,7 @@ def get_auth_token():
         params=token_headers
     )
 
-    logging.info(f'\nClick the link below and authorize the application.\n\n{token_response.url}\n')
+    print(f'\nClick the link below and authorize the application.\n\n{token_response.url}\n')
     auth_token = input('Paste your token from the URL.   ').strip()
     
     credentials['auth_token'] = auth_token.replace('https://github.com/tophermckee?code=', '')
@@ -66,7 +66,7 @@ def get_access_token():
         data=access_params
     ).json()
 
-    logging.info(f'\n{access_response}\n')
+    # logging.info(f'\n{access_response}\n')
 
     credentials['access_token'] = access_response['access_token'],
     credentials['refresh_token'] = access_response['refresh_token'],
@@ -130,7 +130,7 @@ def add_song_to_spotify(uri, playlist_id, title, artist):
 
     post_attempt = requests.post(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=headers, data=payload).json()
     
-    logging.info(f'\n{post_attempt}\n')
+    logging.info(f'{post_attempt}')
 
 def add_song_to_firestore(uri, title, artist, image_url):
 
@@ -163,3 +163,26 @@ def return_playlist_name(playlist_id) -> str:
     with open('creds.json') as file:
         credentials = json.load(file)
     return requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()['name']
+
+def send_summary_email(html_email, recipient):
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        try:
+            smtp.login(credentials['email_address'], credentials['python_gmail_app_password'])
+        except Exception as error:
+            logging.error(f"Error at SSL login -- {error}", exc_info=True)
+            smtp.quit()
+        
+        msg = EmailMessage()
+        msg['Subject'] = f'Spotify Collection {today_with_time}'
+        msg['From'] = credentials['email_address']
+        msg['To'] = recipient
+        msg.add_alternative(html_email, subtype='html')
+        logging.info(f"🤞 Attempting email to {recipient} 🤞")
+        try:
+            smtp.send_message(msg)
+            logging.info(f"🍾 Email sent for to:{recipient} 🍾")
+            smtp.quit()
+        except Exception as error:
+            logging.error(f"Error at send for to:{recipient} -- error: {error}", exc_info=True)
+            smtp.quit()
+    

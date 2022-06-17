@@ -5,10 +5,10 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s',
     datefmt='%B-%d-%Y %H:%M:%S',
     filename=f"./logs/{Path(__file__).stem}.log",
-    filemode='w'
+    filemode='a'
 )
 
-def main():
+def daily_summary():
     
     table_data = ''
     songs_added_today = db.collection('songs').where('logged', '==', False).stream()
@@ -20,33 +20,14 @@ def main():
         db.collection('songs').document(song.id).update({'logged': True})
 
     if song_count > 0:
-        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-            try:
-                smtp.login(credentials['email_address'], credentials['python_gmail_app_password'])
-            except Exception as error:
-                logging.error(f"Error at SSL login -- {error}", exc_info=True)
-                smtp.quit()
 
-            with open('email.html', 'r') as html_file:
-                html_email = html_file.read().replace('###table_data###', table_data)
-            
-            msg = EmailMessage()
-            msg['Subject'] = f'Spotify Collection {today_with_time}'
-            msg['From'] = credentials['email_address']
-            msg['To'] = 'tophermckee@gmail.com'
-            msg.set_content('this is the content')
-            msg.add_alternative(html_email, subtype='html')
+        with open('email.html', 'r') as html_file:
+            html_email = html_file.read().replace('###table_data###', table_data)
 
-            logging.info(f"🤞 Attempting email for to:tophermckee@gmail.com 🤞")
-            try:
-                smtp.send_message(msg)
-                logging.info(f"🍾 Email sent for to:tophermckee@gmail.com 🍾")
-                smtp.quit()
-            except Exception as error_inside:
-                logging.error(f"Error at send for to:tophermckee@gmail.com -- error: {error_inside}", exc_info=True)
-                smtp.quit()
+        send_summary_email(html_email, 'tophermckee@gmail.com')
+
     else:
         logging.info(f"😮‍💨 No songs since last email 😮‍💨")
 
 if __name__ == '__main__':
-    main()
+    daily_summary()

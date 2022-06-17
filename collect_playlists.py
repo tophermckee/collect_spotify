@@ -8,7 +8,7 @@ logging.basicConfig(
     filemode='a'
 )
 
-def compare_playlists():
+def collect_playlists():
         
     with open('creds.json') as file:
         credentials = json.load(file)
@@ -67,4 +67,4 @@ def compare_playlists():
 
 if __name__ == "__main__":
     refresh_token()
-    compare_playlists()
+    collect_playlists()
