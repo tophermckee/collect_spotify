@@ -201,8 +201,7 @@ def compare_playlists():
                     if song["track"]["id"] in destination_song_ids:
                         continue
                     else:
-                        logging.info(f'adding song {song["track"]["name"]} to playlist {destination_playlist_name}')
-                        add_song(song["track"]["uri"], credentials['collections'][collection]['destination_id'])
+                        add_song(song["track"]["uri"], credentials['collections'][collection]['destination_id'], song["track"]["name"], song["track"]["artists"][0]["name"])
                         added_songs += 1
                 
                 offset += 100
