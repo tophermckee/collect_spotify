@@ -124,11 +124,8 @@ def add_song(uri, playlist_id, title, artist):
         "uris": [uri]
     })
 
-    post_attempt = requests.post(  
-        f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks',
-        headers=headers,
-        data=payload
-    ).json()
+    post_attempt = requests.post(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=headers, data=payload).json()
+    
     logging.info(f'\n{post_attempt}\n')
 
 def compare_playlists():
