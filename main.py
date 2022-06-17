@@ -140,8 +140,8 @@ def add_song_to_firestore(uri, title, artist, image_url):
         'uri': uri,
         'title': title,
         'artist': artist,
-        'date_added': datetime.datetime.now().strftime('%Y-%m-%d'),
         'image_url': image_url,
+        'logged': False
     })
 
 def check_token():
