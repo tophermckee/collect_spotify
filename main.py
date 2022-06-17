@@ -41,6 +41,7 @@ def get_auth_token():
 
     return auth_token
 
+
 def get_access_token():
     with open('creds.json') as file:
         credentials = json.load(file)
@@ -71,6 +72,7 @@ def get_access_token():
     with open('creds.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
         f.close()
+
 
 def refresh_token():
     with open('creds.json') as file:
