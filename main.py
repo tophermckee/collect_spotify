@@ -1,8 +1,4 @@
-import requests, json, time, datetime, pprint, logging, string, firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
-from pprint import pformat
-from pathlib import Path
+from utilities import *
 
 logging.basicConfig(
     level=logging.INFO,
@@ -11,12 +7,6 @@ logging.basicConfig(
     filename=f"./logs/{Path(__file__).stem}.log",
     filemode='a'
 )
-
-cred = credentials.Certificate('spotify-collection-93bd97a82285.json')
-firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-pp = pprint.PrettyPrinter(indent=2)
 
 def get_auth_token():
     with open('creds.json') as file:

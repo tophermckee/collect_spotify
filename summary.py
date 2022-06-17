@@ -1,9 +1,4 @@
-import requests, json, time, datetime, pprint, logging, string, firebase_admin, smtplib
-from email.message import EmailMessage
-from firebase_admin import credentials
-from firebase_admin import firestore
-from pprint import pformat
-from pathlib import Path
+from utilities import *
 
 logging.basicConfig(
     level=logging.INFO,
@@ -13,23 +8,12 @@ logging.basicConfig(
     filemode='w'
 )
 
-cred = credentials.Certificate('spotify-collection-93bd97a82285.json')
-firebase_admin.initialize_app(cred)
-db = firestore.client()
-
-with open('creds.json') as file:
-    credentials = json.load(file)
-
-pp = pprint.PrettyPrinter(indent=2)
-
-today_with_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
 def main():
     
     table_data = ''
     songs_added_today = db.collection('songs').where('logged', '==', False).stream()
     song_count = 0
-    
+
     for song in songs_added_today:
         song_count += 1
         table_data += f"<tr><td><img src=\"{song.to_dict()['image_url']}\" width=\"128px\"></td><td><p>Title: \"{song.to_dict()['title']}\"</p><p>Artist: {song.to_dict()['artist']}</p></td></tr>"
