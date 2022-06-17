@@ -1,4 +1,14 @@
-import requests, json, time, datetime, pprint
+import requests, json, time, datetime, pprint, logging
+from pprint import pformat
+from pathlib import Path
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%B-%d-%Y %H:%M:%S',
+    filename=f"./logs/{Path(__file__).stem}.log",
+    filemode='w'
+)
 
 pp = pprint.PrettyPrinter(indent=2)
 
@@ -20,7 +30,7 @@ def get_auth_token():
         params=token_headers
     )
 
-    print(f'\nClick the link below and authorize the application.\n\n{token_response.url}\n')
+    logging.info(f'\nClick the link below and authorize the application.\n\n{token_response.url}\n')
     auth_token = input('Paste your token from the URL.   ').strip()
     
     credentials['auth_token'] = auth_token.replace('https://github.com/tophermckee?code=', '')
@@ -51,7 +61,7 @@ def get_access_token():
         data=access_params
     ).json()
 
-    print(f'\n{access_response}\n')
+    logging.info(f'\n{access_response}\n')
 
     credentials['access_token'] = access_response['access_token'],
     credentials['refresh_token'] = access_response['refresh_token'],
@@ -82,15 +92,15 @@ def refresh_token():
         data=access_params
     ).json()
 
-    print(f'\n{access_response}\n')
+    logging.info(f'\n{access_response}\n')
     
-    print(f"type of access_token -- {type(access_response['access_token'])}")
+    logging.info(f"type of access_token -- {type(access_response['access_token'])}")
     
     credentials['access_token'] = access_response['access_token'],
     credentials['expires_readable'] = datetime.datetime.fromtimestamp(time.time() + int(access_response['expires_in'])).strftime('%Y-%m-%d %H:%M:%S'),
     credentials['expires_integer'] = time.time() + int(access_response['expires_in'])
 
-    pp.pprint(credentials)
+    logging.info(pformat(credentials))
 
     with open('creds.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
@@ -103,7 +113,7 @@ def add_song(uri):
     auth_token = credentials['auth_token']
     access_token = credentials['access_token'][0]
 
-    print(f'Attempting to add current song with uri {uri}')
+    logging.info(f'Attempting to add current song with uri {uri}')
     headers = {
         'Authorization': f'Bearer {credentials["access_token"][0]}',
         'Content-Type': 'application/json'
@@ -118,7 +128,7 @@ def add_song(uri):
         headers=headers,
         data=payload
     ).json()
-    print(f'\n{post_attempt}\n')
+    logging.info(f'\n{post_attempt}\n')
 
 def compare_playlists():
         
@@ -129,10 +139,10 @@ def compare_playlists():
     access_token = credentials['access_token'][0]
 
     if credentials['expires_integer'] < time.time():
-        print(f"token expired -- {credentials['expires_readable']}")
+        logging.info(f"token expired -- {credentials['expires_readable']}")
         refresh_token()
     else:
-        print('token still active')
+        logging.info('token still active')
 
     playlist_ids = credentials['playlist_ids']
     destination_ids = []
@@ -152,7 +162,7 @@ def compare_playlists():
             i += 1
         offset += 100
     
-    print(f"\n{len(destination_ids)} songs in destination playlist\n")
+    logging.info(f"\n{len(destination_ids)} songs in destination playlist\n")
     
     for id in playlist_ids:
         playlist_name = requests.get(
@@ -162,7 +172,7 @@ def compare_playlists():
                 'Content-Type': 'application/json'
             }
         ).json()['name']
-        print(f'checking playlist {playlist_name}')
+        logging.info(f'checking playlist {playlist_name}')
         added_songs = 0
         offset = 0
         i = 1
@@ -185,7 +195,7 @@ def compare_playlists():
                     add_song(song["track"]["uri"])
                     added_songs += 1
             offset += 100
-        print(f'added {added_songs} songs from {playlist_name} songs to Collected Music\n')
+        logging.info(f'added {added_songs} songs from {playlist_name} songs to Collected Music\n')
 
 if __name__ == "__main__":
     refresh_token()
