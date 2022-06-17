@@ -139,58 +139,75 @@ def check_token():
     else:
         logging.info('token still active')
 
-    playlist_ids = credentials['playlist_ids']
-    destination_ids = []
-    offset = 0
-    i = 1
-    while offset < 2000:
-        playlist_id = credentials['destination_id']
-        playlist_headers = {
-            'Authorization': f'Bearer {credentials["access_token"][0]}'
-        }
-        params = {
-            'offset': offset
-        }
-        this_playlist_response = requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=playlist_headers, params=params).json()
-        for song in this_playlist_response['items']:
-            destination_ids.append(song["track"]["id"])
-            i += 1
-        offset += 100
-    
-    logging.info(f"\n{len(destination_ids)} songs in destination playlist\n")
-    
-    for id in playlist_ids:
-        playlist_name = requests.get(
-            f'https://api.spotify.com/v1/playlists/{id}',
-            headers={
-                'Authorization': f'Bearer {credentials["access_token"][0]}',
-                'Content-Type': 'application/json'
-            }
-        ).json()['name']
-        logging.info(f'checking playlist {playlist_name}')
-        added_songs = 0
-        offset = 0
-        i = 1
-        while offset < 2000:
-            playlist_id = id
-            playlist_headers = {
-                'Authorization': f'Bearer {credentials["access_token"][0]}',
-                'Content-Type': 'application/json'
-            }
-            params = {
-                'offset': offset
-            }
-            this_playlist_response = requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=playlist_headers, params=params).json()
-            for song in this_playlist_response['items']:
-                i += 1
 
-                if song["track"]["id"] in destination_ids:
-                    continue
-                else:
+def return_playlist_length(playlist_id) -> int:
+    with open('creds.json') as file:
+        credentials = json.load(file)
+    return requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()['total']
+
+
+def return_playlist_name(playlist_id) -> str:
+    with open('creds.json') as file:
+        credentials = json.load(file)
+    return requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()['name']
+
+
+def compare_playlists():
+        
+    with open('creds.json') as file:
+        credentials = json.load(file)
+
+    auth_token = credentials['auth_token']
+    access_token = credentials['access_token'][0]    
+
+    check_token()
+
+    for collection in credentials['collections']:
+        
+        headers = {'Authorization': f'Bearer {credentials["access_token"][0]}'}
+        playlist_ids = credentials['collections'][collection]['playlist_ids']
+        destination_song_ids = []
+        offset = 0
+
+        destination_playlist_id = credentials['collections'][collection]['destination_id']
+        destination_playlist_name = return_playlist_name(destination_playlist_id)
+
+        while offset < return_playlist_length(destination_playlist_id):
+            
+            params = {'offset': offset}
+            this_playlist_response = requests.get(f'https://api.spotify.com/v1/playlists/{destination_playlist_id}/tracks', headers=headers, params=params).json()
+            
+            for song in this_playlist_response['items']:
+                destination_song_ids.append(song["track"]["id"])
+            offset += 100
+        
+        logging.info(f"\n{len(destination_song_ids)} songs in destination playlist -- {return_playlist_name(destination_playlist_id)}\n")
+        
+        for id in playlist_ids:
+            
+            playlist_name = return_playlist_name(id)
+            logging.info(f'checking playlist {playlist_name}')
+            added_songs = 0
+            offset = 0
+            
+            while offset < return_playlist_length(id):
+                
+                playlist_id = id
+                params = {'offset': offset}
+                this_playlist_response = requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=headers, params=params).json()
+                
+                for song in this_playlist_response['items']:
+
+                    if song["track"]["id"] in destination_song_ids:
+                        continue
+                    else:
+                        logging.info(f'adding song {song["track"]["name"]} to playlist {destination_playlist_name}')
                         add_song(song["track"]["uri"], credentials['collections'][collection]['destination_id'])
                         added_songs += 1
+                
                 offset += 100
-            logging.info(f'added {added_songs} songs from {playlist_name} songs to Collected Music\n')
+
+            logging.info(f'added {added_songs} songs from {playlist_name} songs to {destination_playlist_name}\n')
 
 if __name__ == "__main__":
     refresh_token()
