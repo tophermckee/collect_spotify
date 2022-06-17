@@ -12,6 +12,10 @@ logging.basicConfig(
     filemode='a'
 )
 
+cred = credentials.Certificate('spotify-collection-93bd97a82285.json')
+firebase_admin.initialize_app(cred)
+db = firestore.client()
+
 pp = pprint.PrettyPrinter(indent=2)
 
 def get_auth_token():
@@ -130,6 +134,15 @@ def add_song_to_spotify(uri, playlist_id, title, artist):
     
     logging.info(f'\n{post_attempt}\n')
 
+def add_song_to_firestore(uri, title, artist, image_url):
+
+    doc_ref = db.collection(u'songs').document(uri).set({
+        'uri': uri,
+        'title': title,
+        'artist': artist,
+        'date_added': datetime.datetime.now().strftime('%Y-%m-%d'),
+        'image_url': image_url,
+    })
 
 def check_token():
     with open('creds.json') as file:
@@ -204,6 +217,7 @@ def compare_playlists():
                         continue
                     else:
                         add_song_to_spotify(song["track"]["uri"], credentials['collections'][collection]['destination_id'], song["track"]["name"], song["track"]["artists"][0]["name"])
+                        add_song_to_firestore(song["track"]["uri"], song["track"]["name"], song["track"]["artists"][0]["name"], song["track"]["album"]["images"][0]["url"])
                         added_songs += 1
                 
                 offset += 100
