@@ -1,4 +1,6 @@
-import requests, json, time, datetime, pprint, logging, string
+import requests, json, time, datetime, pprint, logging, string, firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
 from pprint import pformat
 from pathlib import Path
 
