@@ -29,6 +29,7 @@ def main():
     table_data = ''
     songs_added_today = db.collection('songs').where('logged', '==', False).stream()
     song_count = 0
+    
     for song in songs_added_today:
         song_count += 1
         table_data += f"<tr><td><img src=\"{song.to_dict()['image_url']}\" width=\"128px\"></td><td><p>Title: \"{song.to_dict()['title']}\"</p><p>Artist: {song.to_dict()['artist']}</p></td></tr>"
