@@ -11,7 +11,7 @@ logging.basicConfig(
 )
 
 pp = pprint.PrettyPrinter(indent=2)
-
+# and again, this is a bit of a hack, but it works
 def get_auth_token():
     with open('creds.json') as file:
         credentials = json.load(file)
