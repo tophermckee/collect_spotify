@@ -116,11 +116,9 @@ def add_song(uri, playlist_id, title, artist):
     auth_token = credentials['auth_token']
     access_token = credentials['access_token'][0]
 
-    logging.info(f'Attempting to add current song with uri {uri}')
-    headers = {
-        'Authorization': f'Bearer {credentials["access_token"][0]}',
-        'Content-Type': 'application/json'
-    }
+    logging.info(f'Attempting to add \'{title}\' by {artist} with uri {uri}')
+    
+    headers = {'Authorization': f'Bearer {credentials["access_token"][0]}', 'Content-Type': 'application/json'}
 
     payload = json.dumps({
         "uris": [uri]
