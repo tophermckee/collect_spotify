@@ -128,9 +128,11 @@ def add_song_to_spotify(uri, playlist_id, title, artist):
         "uris": [uri]
     })
 
-    post_attempt = requests.post(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=headers, data=payload).json()
-    
-    logging.info(f'{post_attempt}')
+    try:
+        post_attempt = requests.post(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=headers, data=payload).json()
+        logging.info(f'{post_attempt}')
+    except Exception as error:
+        logging.error(f"Error adding \'{title.translate(str.maketrans('', '', string.punctuation))}\' by {artist} with uri {uri}\n\tError: {error}", exc_info=True)
 
 def add_song_to_firestore(uri, title, artist, image_url):
 
