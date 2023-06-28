@@ -1,13 +1,5 @@
 from utilities import *
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%B-%d-%Y %H:%M:%S',
-    filename=f"./logs/{Path(__file__).stem}.log",
-    filemode='a'
-)
-
 def daily_summary():
     
     table_data = ''

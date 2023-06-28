@@ -1,13 +1,5 @@
 from utilities import *
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    datefmt='%B-%d-%Y %H:%M:%S',
-    filename=f"./logs/{Path(__file__).stem}.log",
-    filemode='a'
-)
-
 def collect_playlists():
         
     with open('creds.json') as file:
@@ -65,6 +57,10 @@ def collect_playlists():
 
             logging.info(f'added {added_songs} songs from {playlist_name} songs to {destination_playlist_name}\n')
 
+
+def collect_playlists_v2():
+    logging.info('we on that v2 boiz')
+
 if __name__ == "__main__":
     refresh_token()
-    collect_playlists()
+    collect_playlists_v2()
