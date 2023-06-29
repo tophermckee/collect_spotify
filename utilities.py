@@ -36,7 +36,7 @@ def get_auth_token():
         'client_id': credentials['client_id'],
         'response_type': 'code',
         'redirect_uri': credentials['redirect_uri'],
-        'scope': 'playlist-modify-public,playlist-modify-private'
+        'scope': 'playlist-modify-public,playlist-modify-private,user-library-modify'
     }
     token_response = requests.get(
         'https://accounts.spotify.com/authorize',
@@ -75,7 +75,7 @@ def get_access_token():
         data=access_params
     ).json()
 
-    # logging.info(f'\n{access_response}\n')
+    logging.info(f'\n{access_response}\n')
 
     credentials['access_token'] = access_response['access_token'],
     credentials['refresh_token'] = access_response['refresh_token'],
@@ -122,7 +122,7 @@ def refresh_token():
         f.close()
 
 
-def add_song_to_spotify(uri, playlist_id, title, artist):
+def add_song_to_spotify(uri: str, playlist_id: str, title: str, artist: str):
     with open('creds.json') as file:
         credentials = json.load(file)
 
@@ -139,7 +139,7 @@ def add_song_to_spotify(uri, playlist_id, title, artist):
 
     try:
         post_attempt = requests.post(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers=headers, data=payload).json()
-        logging.info(f'{post_attempt}')
+        logging.info(f"Successfully added \'{title.translate(str.maketrans('', '', string.punctuation))}\' by {artist} -- {post_attempt}")
     except Exception as error:
         logging.error(f"Error adding \'{title.translate(str.maketrans('', '', string.punctuation))}\' by {artist} with uri {uri}\n\tError: {error}", exc_info=True)
 
@@ -197,3 +197,44 @@ def send_summary_email(html_email, recipient):
             logging.error(f"Error at send for to:{recipient} -- error: {error}", exc_info=True)
             smtp.quit()
     
+def get_liked_tracks():
+    with open('creds.json') as file:
+        credentials = json.load(file)
+    try:
+        logging.info("Getting liked tracks")
+        liked_tracks = requests.get(f'https://api.spotify.com/v1/me/tracks', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()
+        logging.info(f"Successfully pulled liked tracks")
+    except Exception as err:
+        logging.error(f"Error getting liked tracks: {err}", exc_info=True)
+
+    return liked_tracks
+
+def get_artist(artist_id):
+    with open('creds.json') as file:
+        credentials = json.load(file)
+    try:
+        logging.info("Getting artist")
+        artist = requests.get(f'https://api.spotify.com/v1/artists/{artist_id}', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()
+        logging.info(f"Successfully pulled artist info")
+    except Exception as err:
+        logging.error(f"Error getting artist: {err}", exc_info=True)
+
+    return artist
+
+def delete_song_from_likes(uri: str) -> None:
+    with open('creds.json') as file:
+        credentials = json.load(file)
+    json_info = {"ids": [uri]}
+    payload = json.dumps(json_info)
+    try:
+        logging.info("Removing song from likes")
+        deletion = requests.delete(
+            url=f'https://api.spotify.com/v1/me/tracks',
+            headers={'Authorization': f'Bearer {credentials["access_token"][0]}'},
+            data=payload
+        )
+        logging.info(f"Successfully removed from likes")
+    except Exception as err:
+        logging.error(f"Error removing from likes: {err}", exc_info=True)
+
+    return deletion
