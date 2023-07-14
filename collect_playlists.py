@@ -133,9 +133,18 @@ def collect_playlists_v2():
         delete_song_from_likes(track["track"]["id"])
         add_song_to_firestore(track["track"]["uri"], track["track"]["name"], track["track"]["artists"][0]["name"], track["track"]["album"]["images"][0]["url"])
 
+def log_cleaner():
+    directory = "logs/json"
+    for file in os.listdir(directory):
+        file_size = os.stat(f'{directory}/{file}')
+        if file_size.st_size >= 5_000:
+            logging.info(f"removing {directory}/{file} because it is over 500 KB at {file_size.st_size} bytes")
+            os.remove(f'{directory}/{file}')
+
 if __name__ == "__main__":
     refresh_token()
     try:
         collect_playlists_v2()
     except Exception as err:
         logging.error(f"error collecting playlists: {err}", exc_info=True)
+    log_cleaner()
