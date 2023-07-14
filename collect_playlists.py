@@ -135,4 +135,7 @@ def collect_playlists_v2():
 
 if __name__ == "__main__":
     refresh_token()
-    collect_playlists_v2()
+    try:
+        collect_playlists_v2()
+    except Exception as err:
+        logging.error(f"error collecting playlists: {err}", exc_info=True)
