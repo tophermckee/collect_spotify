@@ -1,4 +1,4 @@
-import requests, json, time, datetime, pprint, logging, string, firebase_admin, smtplib
+import requests, json, time, datetime, pprint, logging, string, firebase_admin, smtplib, os
 from email.message import EmailMessage
 from firebase_admin import credentials
 from firebase_admin import firestore
