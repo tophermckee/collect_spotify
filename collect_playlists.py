@@ -59,7 +59,7 @@ def collect_playlists():
 
 
 def collect_playlists_v2():
-    refresh_token()
+    access_token = refresh_token()[0]
 
     playlist_info = {
         'current_yearly': {
@@ -86,7 +86,7 @@ def collect_playlists_v2():
         while offset < return_playlist_length(playlist_info[playlist]['id']):
             
             params = {'offset': offset}
-            request =  requests.get(f"https://api.spotify.com/v1/playlists/{playlist_info[playlist]['id']}/tracks", headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}, params=params)
+            request =  requests.get(f"https://api.spotify.com/v1/playlists/{playlist_info[playlist]['id']}/tracks", headers={'Authorization': f'Bearer {access_token}'}, params=params)
             this_playlist_response = request.json()
             
             with open(f"logs/json/{datetime.datetime.now().strftime('%Y-%m-%d_%H:%M:%S')}_{playlist}offset{offset}playlistresponse.json", "w") as file:
