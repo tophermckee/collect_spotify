@@ -120,6 +120,8 @@ def refresh_token():
     with open('creds.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
         f.close()
+    
+    return credentials['access_token'], credentials['expires_readable'], credentials['expires_integer']
 
 
 def add_song_to_spotify(uri: str, playlist_id: str, title: str, artist: str):
