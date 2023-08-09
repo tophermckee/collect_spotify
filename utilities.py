@@ -121,7 +121,7 @@ def refresh_token():
         json.dump(credentials, f, ensure_ascii=False, indent=4)
         f.close()
     
-    return credentials['access_token'], credentials['expires_readable'], credentials['expires_integer']
+    return access_response['access_token']
 
 
 def add_song_to_spotify(uri: str, playlist_id: str, title: str, artist: str):
