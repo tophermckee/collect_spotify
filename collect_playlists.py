@@ -59,7 +59,7 @@ def collect_playlists():
 
 
 def collect_playlists_v2():
-    access_token = refresh_token()[0]
+    access_token = refresh_token()
 
     playlist_info = {
         'current_yearly': {
