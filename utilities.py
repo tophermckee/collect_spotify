@@ -152,7 +152,8 @@ def add_song_to_firestore(uri, title, artist, image_url):
         'title': title,
         'artist': artist,
         'image_url': image_url,
-        'logged': False
+        'logged': False,
+        'downloaded': False,
     })
 
 def check_token():
