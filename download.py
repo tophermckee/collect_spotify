@@ -4,7 +4,7 @@ def daily_download():
     
     table_data = ''
 
-    not_downloaded_yet = db.collection('songs').where(filter=FieldFilter('downloaded', '==', False)).stream()
+    not_downloaded_yet = list(db.collection('songs').where(filter=FieldFilter('downloaded', '==', False)).stream())
     song_count = 0
 
     for song in not_downloaded_yet:
