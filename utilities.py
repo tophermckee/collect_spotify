@@ -2,6 +2,7 @@ import requests, json, time, datetime, pprint, logging, string, firebase_admin, 
 from email.message import EmailMessage
 from firebase_admin import credentials
 from firebase_admin import firestore
+from google.cloud.firestore_v1.base_query import FieldFilter
 from pprint import pformat
 from pathlib import Path
 import __main__

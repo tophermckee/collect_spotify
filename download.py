@@ -3,13 +3,14 @@ from utilities import *
 def daily_download():
     
     table_data = ''
-    not_downloaded_yet = db.collection('songs').where('downloaded', '==', False).stream()
+
+    not_downloaded_yet = list(db.collection('songs').where(filter=FieldFilter('downloaded', '==', False)).stream())
     song_count = 0
 
     for song in not_downloaded_yet:
         try:
             format_string = r"{artist}/{album}/{track_number} - {song_name}.{ext}"
-            os.system(f"zotify '{song.to_dict()['uri']}' --root-path=/Volumes/data/media/zotify --output='{format_string}'")
+            os.system(f"/opt/homebrew/bin/zotify '{song.to_dict()['uri']}' --output='{format_string}'")
             db.collection('songs').document(song.id).update({'downloaded': True})
             song_count += 1
         except Exception as err:
