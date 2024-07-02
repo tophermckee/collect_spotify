@@ -110,7 +110,7 @@ def collect_playlists_v2():
             if 'country' in genre.lower():
                 country = True
                 break
-        print(f"{artist_info['name']}, {country=}", artist_info['genres'])
+        logging.info(f"{artist_info['name']}, {country=}", artist_info['genres'])
         if country:
             
             if track["track"]["id"] not in playlist_info['country_playlist']['song_ids']:
