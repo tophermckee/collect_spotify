@@ -242,3 +242,7 @@ def delete_song_from_likes(uri: str) -> None:
         logging.error(f"Error removing from likes: {err}", exc_info=True)
 
     return deletion
+
+# if __name__ == "__main__":
+    # get_access_token()
+    # get_auth_token()
