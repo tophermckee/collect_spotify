@@ -207,6 +207,7 @@ def get_liked_tracks():
     try:
         logging.info("Getting liked tracks")
         liked_tracks = requests.get(f'https://api.spotify.com/v1/me/tracks', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()
+        # logging.info(liked_tracks)
         logging.info(f"Successfully pulled liked tracks")
     except Exception as err:
         logging.error(f"Error getting liked tracks: {err}", exc_info=True)
