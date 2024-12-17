@@ -37,7 +37,7 @@ def get_auth_token():
         'client_id': credentials['client_id'],
         'response_type': 'code',
         'redirect_uri': credentials['redirect_uri'],
-        'scope': 'playlist-modify-public,playlist-modify-private,user-library-modify'
+        'scope': 'playlist-modify-public,playlist-modify-private,user-library-modify,user-library-read'
     }
     token_response = requests.get(
         'https://accounts.spotify.com/authorize',
