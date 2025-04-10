@@ -10,8 +10,9 @@ def daily_download():
     for song in not_downloaded_yet:
         try:
             format_string = r"{artist}/{album}/{track_number} - {song_name}.{ext}"
-            os.system(f"/opt/homebrew/bin/zotify '{song.to_dict()['uri']}' --output='{format_string}'")
-            db.collection('songs').document(song.id).update({'downloaded': True})
+            result = os.system(f"/opt/homebrew/bin/zotify '{song.to_dict()['uri']}' --download-real-time --audio-format=mp3 --album-library=/Volumes/data/media/zotify/Music/")
+            if result == 0:
+                db.collection('songs').document(song.id).update({'downloaded': True})
             song_count += 1
         except Exception as err:
             logging.error(f"Error downloading {song.id}: {err}", exc_info=True)
