@@ -6,3 +6,4 @@ I've provided a credentials template if you'd like to use this project for yours
 - A redirect URL to which Spotify can send their token (I use my Github profile -- which is written into `main.py` to make it easier to pasting into the terminal)
 - An array of playlist ID's to pull songs from
 - A destination ID into which the service will output new songs
+- Uses [this fork of zotify](https://github.com/DraftKinner/zotify)
