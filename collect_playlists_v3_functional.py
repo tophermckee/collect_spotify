@@ -146,7 +146,6 @@ def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=F
     
     while offset < total_songs:
         params = {'offset': offset, 'limit': 50}
-        
         try:
             request = requests.get(
                 f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks", 
@@ -174,23 +173,11 @@ def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=F
                     artist_name = track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
                     song_uri = track["uri"]
                     image_url = track["album"]["images"][0]["url"] if track["album"]["images"] else ""
-                    
+
                     song_ids.append(song_id)
                     song_titles.append(song_title)
-                    
+
                     # Cache detailed song information
-                    song_data = {
-                        'song_id': song_id,
-                        'uri': song_uri,
-                        'title': song_title,
-                        'artist': artist_name,
-                        'image_url': image_url,
-                        'logged': False,  # Mark as not logged yet - another process will email and mark as logged
-                        'date_cached': datetime.now(),
-                        'playlists': [playlist_id]  # Track which playlists contain this song
-                    }
-                    
-                    # Update or insert song data (add playlist to list if song already exists)
                     existing_song = songs_collection.find_one({"song_id": song_id})
                     if existing_song:
                         # Add this playlist to the list if not already there
@@ -202,6 +189,16 @@ def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=F
                             {"$set": {"playlists": playlists_list, "date_cached": datetime.now()}}
                         )
                     else:
+                        song_data = {
+                            'song_id': song_id,
+                            'uri': song_uri,
+                            'title': song_title,
+                            'artist': artist_name,
+                            'image_url': image_url,
+                            'logged': False,  # Only set for new songs
+                            'date_cached': datetime.now(),
+                            'playlists': [playlist_id]
+                        }
                         songs_collection.insert_one(song_data)
             
             offset += 50
