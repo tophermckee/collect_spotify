@@ -129,9 +129,12 @@ def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=F
             'song_ids': cached_playlist['song_ids'],
             'song_titles': cached_playlist['song_titles']
         }
-    
+
     logging.info(f"Refreshing playlist data for: {playlist_name}")
-    
+
+    # Only fetch the latest playlist name from Spotify when refreshing
+    playlist_name = get_playlist_name_from_spotify(playlist_id, access_token)
+
     song_ids = []
     song_titles = []
     offset = 0
@@ -210,7 +213,7 @@ def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=F
     # Update cache
     playlist_data = {
         'playlist_id': playlist_id,
-        'playlist_name': playlist_name,
+        'playlist_name': playlist_name,  # Overwrite with latest name from Spotify only on refresh
         'song_ids': song_ids,
         'song_titles': song_titles,
         'last_updated': datetime.now(),
