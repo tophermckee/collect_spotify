@@ -517,25 +517,16 @@ def get_statistics():
 
 def collect_playlists_v3():
     """Main collection function with MongoDB caching and verification"""
-    
     # Setup MongoDB
     setup_mongodb_indexes()
-    
     # Get access token
     access_token = refresh_token()
-    
     # Show current statistics
     get_statistics()
-    
     # Get all playlist data
     playlist_info = get_all_playlist_data(access_token)
-    
     # Process liked tracks
     process_liked_tracks(playlist_info, access_token)
-    
-    # Verify recent song additions
-    verify_song_additions(access_token)
-    
     # Show final statistics
     get_statistics()
 
@@ -631,6 +622,9 @@ if __name__ == "__main__":
     recent_parser = subparsers.add_parser('recent-songs', help='Get recently logged songs for email updates')
     recent_parser.add_argument('--days', type=int, default=7, help='Number of days to look back (default: 7)')
     
+    # Verify song additions
+    verify_parser = subparsers.add_parser('verify', help='Run song addition verification')
+    
     # Parse arguments
     args = parser.parse_args()
     
@@ -649,7 +643,10 @@ if __name__ == "__main__":
         if args.command == 'collect':
             print("🚀 Starting main collection process...")
             collect_playlists_v3()
-            
+        elif args.command == 'verify':
+            print("🔍 Running song addition verification...")
+            access_token = refresh_token()
+            verify_song_additions(access_token)
         elif args.command == 'stats':
             print("📊 MongoDB Statistics:")
             try:
