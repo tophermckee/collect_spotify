@@ -362,7 +362,18 @@ def get_all_playlist_data(access_token):
     # Add ALL yearly playlists from the credentials file
     yearly_playlist_ids = credentials['collections']['yearly_playlist_collection']['playlist_ids']
     for i, playlist_id in enumerate(yearly_playlist_ids):
-        playlist_name = get_playlist_name_from_spotify(playlist_id, access_token)
+        # Use cached playlist name if available, otherwise fetch and cache it
+        cached_playlist = playlists_collection.find_one({"playlist_id": playlist_id})
+        if cached_playlist and 'playlist_name' in cached_playlist:
+            playlist_name = cached_playlist['playlist_name']
+        else:
+            playlist_name = get_playlist_name_from_spotify(playlist_id, access_token)
+            # Cache the playlist name for future use
+            playlists_collection.update_one(
+            {"playlist_id": playlist_id},
+            {"$set": {"playlist_name": playlist_name}},
+            upsert=True
+            )
         key = f'yearly_playlist_{i}'
         playlist_info[key] = {
             'id': playlist_id,
