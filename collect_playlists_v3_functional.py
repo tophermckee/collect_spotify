@@ -331,25 +331,30 @@ def get_all_playlist_data(access_token):
     
     # Add current yearly playlist
     current_yearly_id = credentials['collections']['yearly_playlist_collection']['playlist_ids'][-1]
+    current_yearly_name = get_playlist_name_from_spotify(current_yearly_id, access_token)
     playlist_info['current_yearly'] = {
         'id': current_yearly_id,
-        'name': 'Current Yearly',
+        'name': current_yearly_name,
         'song_ids': [],
         'song_titles': []
     }
     
     # Add country playlist
+    country_id = credentials['country_collection_id']
+    country_name = get_playlist_name_from_spotify(country_id, access_token)
     playlist_info['country_playlist'] = {
-        'id': credentials['country_collection_id'],
-        'name': 'Country Collection',
+        'id': country_id,
+        'name': country_name,
         'song_ids': [],
         'song_titles': []
     }
     
     # Add main collection playlist
+    collection_id = credentials['collections']['yearly_playlist_collection']['destination_id']
+    collection_name = get_playlist_name_from_spotify(collection_id, access_token)
     playlist_info['collection_playlist'] = {
-        'id': credentials['collections']['yearly_playlist_collection']['destination_id'],
-        'name': 'Main Collection',
+        'id': collection_id,
+        'name': collection_name,
         'song_ids': [],
         'song_titles': []
     }
@@ -357,14 +362,14 @@ def get_all_playlist_data(access_token):
     # Add ALL yearly playlists from the credentials file
     yearly_playlist_ids = credentials['collections']['yearly_playlist_collection']['playlist_ids']
     for i, playlist_id in enumerate(yearly_playlist_ids):
+        playlist_name = get_playlist_name_from_spotify(playlist_id, access_token)
         key = f'yearly_playlist_{i}'
         playlist_info[key] = {
             'id': playlist_id,
-            'name': f'Yearly Playlist {i+1}',
+            'name': playlist_name,
             'song_ids': [],
             'song_titles': []
         }
-    
     logging.info(f"Processing {len(playlist_info)} playlists total")
     
     # Get playlist data (cached or fresh)
@@ -420,7 +425,7 @@ def process_liked_tracks(playlist_info, access_token):
                     log_add_attempt(
                         song_id, song_name, artist_name,
                         credentials['country_collection_id'],
-                        'Country Collection',
+                        playlist_info['country_playlist']['name'],
                         song_uri
                     )
                 else:
@@ -440,7 +445,7 @@ def process_liked_tracks(playlist_info, access_token):
                     log_add_attempt(
                         song_id, song_name, artist_name,
                         playlist_info['current_yearly']['id'],
-                        'Current Yearly',
+                        playlist_info['current_yearly']['name'],
                         song_uri
                     )
                 else:
@@ -459,7 +464,7 @@ def process_liked_tracks(playlist_info, access_token):
                     log_add_attempt(
                         song_id, song_name, artist_name,
                         playlist_info['collection_playlist']['id'],
-                        'Main Collection',
+                        playlist_info['collection_playlist']['name'],
                         song_uri
                     )
                 else:
@@ -568,6 +573,26 @@ def get_recently_logged_songs(days=7):
     except Exception as e:
         logging.error(f"Error getting recently logged songs: {e}", exc_info=True)
         return []
+
+def get_playlist_name_from_spotify(playlist_id, access_token):
+    """Get the actual playlist name from Spotify API"""
+    try:
+        request = requests.get(
+            f"https://api.spotify.com/v1/playlists/{playlist_id}",
+            headers={'Authorization': f'Bearer {access_token}'},
+            params={'fields': 'name'}
+        )
+        response = request.json()
+        
+        if 'name' in response:
+            return response['name']
+        else:
+            logging.warning(f"Could not get name for playlist {playlist_id}: {response}")
+            return f"Playlist {playlist_id}"
+            
+    except Exception as e:
+        logging.error(f"Error getting playlist name for {playlist_id}: {e}")
+        return f"Playlist {playlist_id}"
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Spotify Collector V3 - Function-oriented MongoDB version')
