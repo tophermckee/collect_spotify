@@ -3,9 +3,11 @@ import pymongo
 from pymongo import MongoClient
 from datetime import datetime, timedelta
 import os
+import argparse
+import sys
 
 # MongoDB connection - get from credentials
-with open('creds.json') as file:
+with open('creds_v3.json') as file:
     credentials = json.load(file)
 
 # MongoDB connection details from credentials
@@ -35,12 +37,64 @@ NEWEST_PLAYLIST_CHECK_SONGS = 50
 def setup_mongodb_indexes():
     """Create MongoDB indexes for better performance"""
     try:
+        # Test connection first
+        mongo_client.admin.command('ping')
+        logging.info("MongoDB connection successful")
+        
         playlists_collection.create_index("playlist_id", unique=True)
         songs_collection.create_index("song_id", unique=True)
         add_attempts_collection.create_index([("song_id", 1), ("playlist_id", 1)])
         logging.info("MongoDB indexes created successfully")
+        return True
+    except pymongo.errors.OperationFailure as e:
+        if "authentication" in str(e).lower():
+            logging.error("MongoDB authentication required. Please check your credentials in creds_v3.json")
+            print("❌ MongoDB requires authentication. Please add credentials to creds_v3.json:")
+            print('  "mongodb": {')
+            print('    "username": "your_username",')
+            print('    "password": "your_password"')
+            print('  }')
+            return False
+        else:
+            logging.error(f"MongoDB operation failed: {e}")
+            return False
     except Exception as e:
         logging.error(f"Error creating MongoDB indexes: {e}")
+        return False
+
+def test_mongodb_connection():
+    """Test MongoDB connection and show database info"""
+    try:
+        # Test connection
+        mongo_client.admin.command('ping')
+        print(f"✅ MongoDB connection successful")
+        print(f"Connected to: {mongo_connection_string}")
+        print(f"Database: {mongo_db_name}")
+        
+        # Show collections
+        collections = db.list_collection_names()
+        print(f"Collections: {collections}")
+        
+        # Show collection counts
+        for collection_name in ['playlists', 'songs', 'add_attempts']:
+            if collection_name in collections:
+                count = db[collection_name].count_documents({})
+                print(f"  {collection_name}: {count} documents")
+            else:
+                print(f"  {collection_name}: (collection doesn't exist yet)")
+        
+        return True
+    except pymongo.errors.OperationFailure as e:
+        if "authentication" in str(e).lower():
+            print(f"❌ MongoDB authentication required")
+            print("Please add username/password to creds_v3.json mongodb section")
+        else:
+            print(f"❌ MongoDB operation failed: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ MongoDB connection failed: {e}")
+        print(f"Connection string: {mongo_connection_string}")
+        return False
 
 def should_refresh_playlist(playlist_id):
     """Check if playlist cache should be refreshed"""
@@ -420,11 +474,71 @@ def log_cleaner():
                 logging.error(f"Error cleaning up {file_path}: {e}")
 
 if __name__ == "__main__":
-    try:
-        collect_playlists_v3()
-        
-    except Exception as err:
-        logging.error(f"Error in main collection process: {err}", exc_info=True)
+    parser = argparse.ArgumentParser(description='Spotify Collector V3 - Function-oriented MongoDB version')
     
-    finally:
-        log_cleaner()
+    # Add subcommands
+    subparsers = parser.add_subparsers(dest='command', help='Available commands')
+    
+    # Main collection command
+    collect_parser = subparsers.add_parser('collect', help='Run the main collection process')
+    
+    # Statistics command
+    stats_parser = subparsers.add_parser('stats', help='Show MongoDB statistics')
+    
+    # Test MongoDB connection
+    test_parser = subparsers.add_parser('test-db', help='Test MongoDB connection')
+    
+    # Setup indexes
+    setup_parser = subparsers.add_parser('setup-db', help='Setup MongoDB indexes')
+    
+    # Clean logs
+    clean_parser = subparsers.add_parser('clean-logs', help='Clean up large log files')
+    
+    # Parse arguments
+    args = parser.parse_args()
+    
+    # If no command provided, run main collection (backward compatibility)
+    if not args.command:
+        try:
+            collect_playlists_v3()
+        except Exception as err:
+            logging.error(f"Error in main collection process: {err}", exc_info=True)
+            print(f"❌ Error: {err}")
+        finally:
+            log_cleaner()
+        sys.exit(0)
+    
+    try:
+        if args.command == 'collect':
+            print("🚀 Starting main collection process...")
+            collect_playlists_v3()
+            
+        elif args.command == 'stats':
+            print("📊 MongoDB Statistics:")
+            try:
+                stats = get_statistics()
+                print("\nDetailed breakdown:")
+                for key, value in stats.items():
+                    print(f"  {key.replace('_', ' ').title()}: {value}")
+            except Exception as e:
+                print(f"❌ Could not get statistics: {e}")
+                
+        elif args.command == 'test-db':
+            test_mongodb_connection()
+            
+        elif args.command == 'setup-db':
+            print("⚙️  Setting up MongoDB indexes...")
+            if setup_mongodb_indexes():
+                print("✅ MongoDB indexes created successfully")
+            else:
+                print("❌ Failed to create MongoDB indexes")
+            
+        elif args.command == 'clean-logs':
+            print("🧹 Cleaning log files...")
+            log_cleaner()
+            print("✅ Log cleanup complete")
+            
+    except Exception as err:
+        logging.error(f"Error running command '{args.command}': {err}", exc_info=True)
+        print(f"❌ Error: {err}")
+        sys.exit(1)

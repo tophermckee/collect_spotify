@@ -12,7 +12,7 @@ logging.basicConfig(
     filemode='a'
 )
 
-with open('creds.json') as file:
+with open('creds_v3.json') as file:
     credentials = json.load(file)
 
 pp = pprint.PrettyPrinter(indent=2)
@@ -20,7 +20,7 @@ pp = pprint.PrettyPrinter(indent=2)
 today_with_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 def get_auth_token():
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
 
     auth_token = credentials['auth_token']
@@ -42,7 +42,7 @@ def get_auth_token():
     
     credentials['auth_token'] = auth_token.replace('https://github.com/tophermckee?code=', '')
 
-    with open('creds.json', 'w', encoding='utf-8') as f:
+    with open('creds_v3.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
         f.close()
 
@@ -50,7 +50,7 @@ def get_auth_token():
 
 
 def get_access_token():
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
 
     auth_token = credentials['auth_token']
@@ -76,13 +76,13 @@ def get_access_token():
     credentials['expires_readable'] = datetime.datetime.fromtimestamp(time.time() + int(access_response['expires_in'])).strftime('%Y-%m-%d %H:%M:%S'),
     credentials['expires_integer'] = time.time() + int(access_response['expires_in'])
 
-    with open('creds.json', 'w', encoding='utf-8') as f:
+    with open('creds_v3.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
         f.close()
 
 
 def refresh_token():
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
 
     auth_token = credentials['auth_token']
@@ -105,14 +105,14 @@ def refresh_token():
     credentials['expires_readable'] = datetime.datetime.fromtimestamp(time.time() + int(access_response['expires_in'])).strftime('%Y-%m-%d %H:%M:%S'),
     credentials['expires_integer'] = time.time() + int(access_response['expires_in'])
 
-    with open('creds.json', 'w', encoding='utf-8') as f:
+    with open('creds_v3.json', 'w', encoding='utf-8') as f:
         json.dump(credentials, f, ensure_ascii=False, indent=4)
 
     return access_response['access_token']
 
 
 def add_song_to_spotify(uri: str, playlist_id: str, title: str, artist: str):
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
 
     auth_token = credentials['auth_token']
@@ -141,7 +141,7 @@ def add_song_to_spotify(uri: str, playlist_id: str, title: str, artist: str):
 
 
 def check_token():
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
 
     if credentials['expires_integer'] < time.time():
@@ -151,18 +151,18 @@ def check_token():
 
 
 def return_playlist_length(playlist_id) -> int:
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
     return requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}/tracks', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()['total']
 
 
 def return_playlist_name(playlist_id) -> str:
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
     return requests.get(f'https://api.spotify.com/v1/playlists/{playlist_id}', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()['name']
 
 def send_summary_email(html_email, recipient):
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
         
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
@@ -177,7 +177,7 @@ def send_summary_email(html_email, recipient):
         smtp.send_message(msg)
     
 def get_liked_tracks():
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
     try:
         liked_tracks = requests.get('https://api.spotify.com/v1/me/tracks?limit=50', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()
@@ -188,7 +188,7 @@ def get_liked_tracks():
     return liked_tracks
 
 def get_artist(artist_id):
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
     try:
         artist = requests.get(f'https://api.spotify.com/v1/artists/{artist_id}', headers={'Authorization': f'Bearer {credentials["access_token"][0]}'}).json()
@@ -198,7 +198,7 @@ def get_artist(artist_id):
     return artist
 
 def delete_song_from_likes(uri: str) -> None:
-    with open('creds.json') as file:
+    with open('creds_v3.json') as file:
         credentials = json.load(file)
     json_info = {"ids": [uri]}
     payload = json.dumps(json_info)
