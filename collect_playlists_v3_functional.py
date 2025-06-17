@@ -43,6 +43,10 @@ def setup_mongodb_indexes():
         
         playlists_collection.create_index("playlist_id", unique=True)
         songs_collection.create_index("song_id", unique=True)
+        songs_collection.create_index("date_added")
+        songs_collection.create_index("date_cached")
+        songs_collection.create_index("logged")
+        songs_collection.create_index("playlists")
         add_attempts_collection.create_index([("song_id", 1), ("playlist_id", 1)])
         logging.info("MongoDB indexes created successfully")
         return True
@@ -116,7 +120,7 @@ def should_refresh_playlist(playlist_id):
     return last_updated < cutoff_date
 
 def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=False, limit_songs=None):
-    """Get playlist songs from cache or Spotify API"""
+    """Get playlist songs from cache or Spotify API and cache detailed song information"""
     
     if not force_refresh and not should_refresh_playlist(playlist_id):
         logging.info(f"Using cached data for playlist: {playlist_name}")
@@ -161,8 +165,41 @@ def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=F
             
             for song in response['items']:
                 if song and song.get("track") and song["track"].get("id"):
-                    song_ids.append(song["track"]["id"])
-                    song_titles.append(song["track"]["name"])
+                    track = song["track"]
+                    song_id = track["id"]
+                    song_title = track["name"]
+                    artist_name = track["artists"][0]["name"] if track["artists"] else "Unknown Artist"
+                    song_uri = track["uri"]
+                    image_url = track["album"]["images"][0]["url"] if track["album"]["images"] else ""
+                    
+                    song_ids.append(song_id)
+                    song_titles.append(song_title)
+                    
+                    # Cache detailed song information
+                    song_data = {
+                        'song_id': song_id,
+                        'uri': song_uri,
+                        'title': song_title,
+                        'artist': artist_name,
+                        'image_url': image_url,
+                        'logged': True,  # Mark as logged since we're caching it
+                        'date_cached': datetime.now(),
+                        'playlists': [playlist_id]  # Track which playlists contain this song
+                    }
+                    
+                    # Update or insert song data (add playlist to list if song already exists)
+                    existing_song = songs_collection.find_one({"song_id": song_id})
+                    if existing_song:
+                        # Add this playlist to the list if not already there
+                        playlists_list = existing_song.get('playlists', [])
+                        if playlist_id not in playlists_list:
+                            playlists_list.append(playlist_id)
+                        songs_collection.update_one(
+                            {"song_id": song_id},
+                            {"$set": {"playlists": playlists_list, "date_cached": datetime.now()}}
+                        )
+                    else:
+                        songs_collection.insert_one(song_data)
             
             offset += 50
             
@@ -211,7 +248,7 @@ def log_add_attempt(song_id, song_name, artist_name, playlist_id, playlist_name,
     logging.info(f"Logged add attempt for '{song_name}' by {artist_name} to {playlist_name}")
 
 def add_song_to_mongodb(uri, title, artist, image_url):
-    """Add song to MongoDB instead of Firestore"""
+    """Add song to MongoDB with the required fields format"""
     try:
         song_data = {
             'song_id': uri.split(':')[-1],  # Extract ID from URI
@@ -219,7 +256,7 @@ def add_song_to_mongodb(uri, title, artist, image_url):
             'title': title,
             'artist': artist,
             'image_url': image_url,
-            'logged': False,
+            'logged': True,  # Set to True as specified in requirements
             'downloaded': False,
             'date_added': datetime.now()
         }
@@ -289,31 +326,53 @@ def verify_song_additions(access_token):
             logging.error(f"Error verifying song addition: {e}", exc_info=True)
 
 def get_all_playlist_data(access_token):
-    """Get data for all playlists (cached or fresh)"""
-    playlist_info = {
-        'current_yearly': {
-            'id': credentials['collections']['yearly_playlist_collection']['playlist_ids'][-1],
-            'name': 'Current Yearly',
-            'song_ids': [],
-            'song_titles': []
-        },
-        'country_playlist': {
-            'id': credentials['country_collection_id'],
-            'name': 'Country Collection',
-            'song_ids': [],
-            'song_titles': []
-        },
-        'collection_playlist': {
-            'id': credentials['collections']['yearly_playlist_collection']['destination_id'],
-            'name': 'Main Collection',
+    """Get data for all playlists (cached or fresh) - checks ALL playlists from credentials"""
+    playlist_info = {}
+    
+    # Add current yearly playlist
+    current_yearly_id = credentials['collections']['yearly_playlist_collection']['playlist_ids'][-1]
+    playlist_info['current_yearly'] = {
+        'id': current_yearly_id,
+        'name': 'Current Yearly',
+        'song_ids': [],
+        'song_titles': []
+    }
+    
+    # Add country playlist
+    playlist_info['country_playlist'] = {
+        'id': credentials['country_collection_id'],
+        'name': 'Country Collection',
+        'song_ids': [],
+        'song_titles': []
+    }
+    
+    # Add main collection playlist
+    playlist_info['collection_playlist'] = {
+        'id': credentials['collections']['yearly_playlist_collection']['destination_id'],
+        'name': 'Main Collection',
+        'song_ids': [],
+        'song_titles': []
+    }
+    
+    # Add ALL yearly playlists from the credentials file
+    yearly_playlist_ids = credentials['collections']['yearly_playlist_collection']['playlist_ids']
+    for i, playlist_id in enumerate(yearly_playlist_ids):
+        key = f'yearly_playlist_{i}'
+        playlist_info[key] = {
+            'id': playlist_id,
+            'name': f'Yearly Playlist {i+1}',
             'song_ids': [],
             'song_titles': []
         }
-    }
+    
+    logging.info(f"Processing {len(playlist_info)} playlists total")
     
     # Get playlist data (cached or fresh)
     for playlist_key, playlist_data in playlist_info.items():
+        # Only limit songs for the current yearly playlist
         limit_songs = NEWEST_PLAYLIST_CHECK_SONGS if playlist_key == 'current_yearly' else None
+        
+        logging.info(f"Processing playlist: {playlist_data['name']} (ID: {playlist_data['id']})")
         
         songs_data = get_playlist_songs(
             playlist_data['id'],
@@ -419,8 +478,12 @@ def get_statistics():
         'cached_playlists': playlists_collection.count_documents({}),
         'total_cached_songs': sum([p.get('total_songs', 0) for p in playlists_collection.find({})]),
         'total_songs_in_db': songs_collection.count_documents({}),
+        'logged_songs': songs_collection.count_documents({"logged": True}),
         'recent_add_attempts': add_attempts_collection.count_documents({
             'attempt_time': {'$gt': datetime.now() - timedelta(days=7)}
+        }),
+        'recently_cached_songs': songs_collection.count_documents({
+            'date_cached': {'$gt': datetime.now() - timedelta(days=7)}
         }),
         'unverified_attempts': add_attempts_collection.count_documents({
             'verified': False,
@@ -473,6 +536,39 @@ def log_cleaner():
             except Exception as e:
                 logging.error(f"Error cleaning up {file_path}: {e}")
 
+def get_recently_logged_songs(days=7):
+    """Get songs that were logged recently for email updates"""
+    try:
+        cutoff_date = datetime.now() - timedelta(days=days)
+        
+        # Find songs logged or cached recently
+        recent_songs = songs_collection.find({
+            "$or": [
+                {"date_added": {"$gt": cutoff_date}},
+                {"date_cached": {"$gt": cutoff_date}}
+            ],
+            "logged": True
+        }).sort("date_added", -1)
+        
+        songs_list = []
+        for song in recent_songs:
+            songs_list.append({
+                'artist': song.get('artist', 'Unknown Artist'),
+                'title': song.get('title', 'Unknown Title'),
+                'uri': song.get('uri', ''),
+                'image_url': song.get('image_url', ''),
+                'logged': song.get('logged', False),
+                'date_added': song.get('date_added'),
+                'playlists': song.get('playlists', [])
+            })
+        
+        logging.info(f"Found {len(songs_list)} recently logged songs")
+        return songs_list
+        
+    except Exception as e:
+        logging.error(f"Error getting recently logged songs: {e}", exc_info=True)
+        return []
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Spotify Collector V3 - Function-oriented MongoDB version')
     
@@ -493,6 +589,10 @@ if __name__ == "__main__":
     
     # Clean logs
     clean_parser = subparsers.add_parser('clean-logs', help='Clean up large log files')
+    
+    # Get recent songs for email updates
+    recent_parser = subparsers.add_parser('recent-songs', help='Get recently logged songs for email updates')
+    recent_parser.add_argument('--days', type=int, default=7, help='Number of days to look back (default: 7)')
     
     # Parse arguments
     args = parser.parse_args()
@@ -537,6 +637,24 @@ if __name__ == "__main__":
             print("🧹 Cleaning log files...")
             log_cleaner()
             print("✅ Log cleanup complete")
+            
+        elif args.command == 'recent-songs':
+            print(f"📧 Getting recently logged songs (last {args.days} days)...")
+            try:
+                recent_songs = get_recently_logged_songs(args.days)
+                if recent_songs:
+                    print(f"\nFound {len(recent_songs)} recently logged songs:")
+                    for song in recent_songs:
+                        print(f"  • {song['title']} by {song['artist']}")
+                        print(f"    URI: {song['uri']}")
+                        print(f"    Logged: {song['logged']}")
+                        if song.get('playlists'):
+                            print(f"    In playlists: {len(song['playlists'])}")
+                        print()
+                else:
+                    print("No recently logged songs found.")
+            except Exception as e:
+                print(f"❌ Could not get recent songs: {e}")
             
     except Exception as err:
         logging.error(f"Error running command '{args.command}': {err}", exc_info=True)
