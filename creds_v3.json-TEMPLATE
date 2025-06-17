@@ -1,0 +1,33 @@
+{
+  "client_id": "your_spotify_client_id",
+  "client_secret": "your_spotify_client_secret",
+  "redirect_uri": "https://github.com/your_username",
+  "auth_token": "",
+  "access_token": [""],
+  "refresh_token": [""],
+  "expires_readable": "",
+  "expires_integer": 0,
+  
+  "collections": {
+    "yearly_playlist_collection": {
+      "playlist_ids": [
+        "playlist_id_2023",
+        "playlist_id_2024", 
+        "playlist_id_2025"
+      ],
+      "destination_id": "main_collection_playlist_id"
+    }
+  },
+  "country_collection_id": "country_playlist_id",
+  
+  "email": "your_email@gmail.com",
+  "password": "your_app_password",
+  
+  "mongodb": {
+    "host": "localhost",
+    "port": 27017,
+    "database": "spotify_collector",
+    "username": null,
+    "password": null
+  }
+}

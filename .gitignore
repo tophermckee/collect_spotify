@@ -3,4 +3,3 @@
 __pycache__
 .DS_Store
 cron_logs.txt
-creds_v3.json-TEMPLATE
