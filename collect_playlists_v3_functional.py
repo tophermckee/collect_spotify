@@ -182,7 +182,7 @@ def get_playlist_songs(playlist_id, playlist_name, access_token, force_refresh=F
                         'title': song_title,
                         'artist': artist_name,
                         'image_url': image_url,
-                        'logged': True,  # Mark as logged since we're caching it
+                        'logged': False,  # Mark as not logged yet - another process will email and mark as logged
                         'date_cached': datetime.now(),
                         'playlists': [playlist_id]  # Track which playlists contain this song
                     }
@@ -256,7 +256,7 @@ def add_song_to_mongodb(uri, title, artist, image_url):
             'title': title,
             'artist': artist,
             'image_url': image_url,
-            'logged': True,  # Set to True as specified in requirements
+            'logged': False,  # Set to False - another process will email and mark as logged
             'downloaded': False,
             'date_added': datetime.now()
         }
@@ -484,6 +484,7 @@ def get_statistics():
         'total_cached_songs': sum([p.get('total_songs', 0) for p in playlists_collection.find({})]),
         'total_songs_in_db': songs_collection.count_documents({}),
         'logged_songs': songs_collection.count_documents({"logged": True}),
+        'unlogged_songs': songs_collection.count_documents({"logged": False}),
         'recent_add_attempts': add_attempts_collection.count_documents({
             'attempt_time': {'$gt': datetime.now() - timedelta(days=7)}
         }),
@@ -546,13 +547,13 @@ def get_recently_logged_songs(days=7):
     try:
         cutoff_date = datetime.now() - timedelta(days=days)
         
-        # Find songs logged or cached recently
+        # Find songs that are unlogged (ready for email updates)
         recent_songs = songs_collection.find({
             "$or": [
                 {"date_added": {"$gt": cutoff_date}},
                 {"date_cached": {"$gt": cutoff_date}}
             ],
-            "logged": True
+            "logged": False  # Only get songs that haven't been emailed yet
         }).sort("date_added", -1)
         
         songs_list = []
