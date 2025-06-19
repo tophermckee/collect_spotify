@@ -24,28 +24,49 @@ songs_collection = db['songs']
 
 
 def daily_download():
+    music_dir = "/Volumes/data/media/zotify/Music/"
+    if not os.path.isdir(music_dir):
+        print(f"ERROR: Music directory '{music_dir}' is not accessible. Please connect to the NAS and try again.")
+        return
     not_downloaded_yet = list(songs_collection.find({'downloaded': False}))
     song_count = 0
 
+    def count_mp3_files(root_dir):
+        count = 0
+        for dirpath, dirnames, filenames in os.walk(root_dir):
+            count += len([f for f in filenames if f.lower().endswith('.mp3')])
+        return count
+
     for song in not_downloaded_yet:
         try:
-            # You may want to adjust the format_string logic for your needs
             uri = song.get('uri')
             artist = song.get('artist', 'Unknown Artist')
             album = song.get('album', 'Unknown Album')
             track_number = song.get('track_number', '')
             song_name = song.get('title', 'Unknown Title')
             ext = 'mp3'
-            # Download using zotify (adjust path as needed)
-            result = os.system(f"/opt/homebrew/bin/zotify '{uri}' --download-real-time --audio-format=mp3 --album-library=/Volumes/data/media/zotify/Music/")
-            if result == 0:
+            # Build expected file path (adjust if zotify changes structure)
+            # Example: /Volumes/data/media/zotify/Music/Artist/Album/01 - Song Name.mp3
+            safe_artist = artist.replace('/', '_')
+            safe_album = album.replace('/', '_')
+            safe_song_name = song_name.replace('/', '_')
+            if track_number:
+                filename = f"{str(track_number).zfill(2)} - {safe_song_name}.{ext}"
+            else:
+                filename = f"{safe_song_name}.{ext}"
+            before_count = count_mp3_files(music_dir)
+            result = os.system(f"/opt/homebrew/bin/zotify '{uri}' --download-real-time --audio-format=mp3 --album-library={music_dir}")
+            after_count = count_mp3_files(music_dir)
+            if result == 0 and after_count == before_count + 1:
                 songs_collection.update_one({'_id': song['_id']}, {'$set': {'downloaded': True}})
+            else:
+                logging.warning(f"Download for {song.get('_id')} did not increase mp3 count in {music_dir}")
             song_count += 1
         except Exception as err:
             logging.error(f"Error downloading {song.get('_id')}: {err}", exc_info=True)
 
     if song_count > 0:
-        logging.info(f"Successfully downloaded {song_count} songs.")
+        logging.info(f"Successfully processed {song_count} songs.")
     else:
         logging.info(f"😮‍💨 No songs since last email 😮‍💨")
 
